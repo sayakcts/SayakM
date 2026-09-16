@@ -1,431 +1,70 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>RAG Learning Simulator</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="description" content="Interactive visual guide and simulator for Retrieval-Augmented Generation architectures." />
+<title>RAG Atlas | Interactive Knowledge Article</title>
 <style>
-  :root{
-    --bg:#0b1020;
-    --panel:#121a2f;
-    --panel2:#18223d;
-    --text:#edf2ff;
-    --muted:#9fb0d2;
-    --accent:#7c9cff;
-    --accent2:#62e7c8;
-    --warning:#ffc86b;
-    --danger:#ff7a90;
-    --border:rgba(255,255,255,.09);
-    --shadow:0 18px 60px rgba(0,0,0,.35);
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{
-    margin:0;
-    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    background:
-      radial-gradient(circle at 15% 10%, rgba(124,156,255,.14), transparent 28%),
-      radial-gradient(circle at 85% 12%, rgba(98,231,200,.10), transparent 28%),
-      linear-gradient(180deg,#08101d 0%,#0b1020 100%);
-    color:var(--text);
-    min-height:100vh;
-  }
-  .app{max-width:1440px;margin:auto;padding:28px}
-  .hero{
-    display:grid;grid-template-columns:1.4fr .6fr;gap:22px;align-items:stretch;margin-bottom:22px
-  }
-  .hero-card,.mini-card,.panel{
-    background:linear-gradient(180deg,rgba(24,34,61,.96),rgba(15,23,43,.96));
-    border:1px solid var(--border);
-    border-radius:24px;
-    box-shadow:var(--shadow);
-  }
-  .hero-card{padding:30px}
-  .eyebrow{color:var(--accent2);font-weight:800;letter-spacing:.11em;text-transform:uppercase;font-size:12px}
-  h1{font-size:clamp(34px,5vw,62px);line-height:1;margin:10px 0 14px;letter-spacing:-.04em}
-  .sub{color:var(--muted);font-size:17px;line-height:1.65;max-width:780px}
-  .mini-card{padding:22px;display:flex;flex-direction:column;justify-content:space-between}
-  .score{font-size:46px;font-weight:900}
-  .score small{font-size:15px;color:var(--muted);font-weight:600}
-  .badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-  .badge{border:1px solid var(--border);background:rgba(255,255,255,.04);padding:8px 11px;border-radius:999px;color:#dfe7ff;font-size:12px}
-  .layout{display:grid;grid-template-columns:330px 1fr;gap:22px}
-  .sidebar{position:sticky;top:20px;align-self:start}
-  .panel{padding:20px;margin-bottom:18px}
-  .panel h3{margin:0 0 14px;font-size:16px}
-  label{display:block;color:var(--muted);font-size:12px;margin:12px 0 7px;font-weight:700}
-  textarea,input,select{
-    width:100%;border:1px solid var(--border);background:#0d1528;color:var(--text);
-    border-radius:14px;padding:12px 13px;outline:none;font:inherit;
-  }
-  textarea{resize:vertical;min-height:92px;line-height:1.5}
-  input[type=range]{padding:0}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .btn{
-    width:100%;border:none;border-radius:14px;padding:13px 16px;font-weight:800;cursor:pointer;
-    background:linear-gradient(135deg,var(--accent),#9b7cff);color:white;box-shadow:0 10px 25px rgba(124,156,255,.25)
-  }
-  .btn.secondary{background:#192440;border:1px solid var(--border);box-shadow:none}
-  .btn.ghost{background:transparent;border:1px solid var(--border);box-shadow:none}
-  .btn:hover{transform:translateY(-1px)}
-  .steps{display:grid;gap:16px}
-  .step{
-    position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(18,26,47,.98),rgba(13,21,40,.98));
-    border:1px solid var(--border);border-radius:22px;padding:20px 20px 18px;
-  }
-  .step::before{
-    content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#2a3554
-  }
-  .step.active::before{background:linear-gradient(var(--accent2),var(--accent))}
-  .step-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-  .num{
-    width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:#1d2949;color:#cdd8f7;font-weight:900
-  }
-  .step.active .num{background:rgba(98,231,200,.14);color:var(--accent2)}
-  .step h2{font-size:18px;margin:0}
-  .step p{color:var(--muted);margin:5px 0 0;line-height:1.55}
-  .flow{
-    display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:14px 0
-  }
-  .node{background:#111b31;border:1px solid var(--border);border-radius:13px;padding:9px 12px;font-size:12px}
-  .arrow{color:#7083aa}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-  .chip{
-    background:#10192f;border:1px solid var(--border);padding:9px 11px;border-radius:12px;font-size:12px;color:#dbe4ff
-  }
-  .chunk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
-  .chunk{background:#0f182d;border:1px solid var(--border);border-radius:14px;padding:12px}
-  .chunk .meta{display:flex;justify-content:space-between;color:#91a1c3;font-size:11px;margin-bottom:8px}
-  .chunk strong{color:var(--accent2)}
-  .vector{
-    display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:8px
-  }
-  .vec-cell{height:14px;border-radius:4px;background:linear-gradient(180deg,#294069,#16233d)}
-  .vec-cell.hot{background:linear-gradient(180deg,#7c9cff,#586ed5)}
-  .results{display:grid;gap:10px}
-  .result{
-    display:grid;grid-template-columns:72px 1fr;gap:12px;background:#10192f;border:1px solid var(--border);border-radius:14px;padding:12px
-  }
-  .score-pill{display:grid;place-items:center;border-radius:10px;background:#182542;font-weight:900;color:var(--accent2)}
-  .bar{height:8px;background:#0a1222;border-radius:999px;overflow:hidden;margin-top:8px}
-  .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:999px}
-  .prompt-box{background:#0a1222;border:1px dashed rgba(124,156,255,.38);border-radius:15px;padding:14px;color:#d7e2ff;white-space:pre-wrap;line-height:1.5}
-  .answer{background:linear-gradient(135deg,rgba(98,231,200,.08),rgba(124,156,255,.08));border:1px solid rgba(98,231,200,.22);border-radius:16px;padding:16px;line-height:1.65}
-  .callout{margin-top:12px;padding:12px 14px;border-radius:14px;background:rgba(255,200,107,.08);border:1px solid rgba(255,200,107,.18);color:#ffd99b;font-size:13px;line-height:1.5}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .kpi{background:#10192f;border:1px solid var(--border);border-radius:14px;padding:14px}
-  .kpi b{display:block;font-size:20px;margin-bottom:3px}
-  .kpi span{font-size:11px;color:var(--muted)}
-  .tiny{font-size:11px;color:var(--muted);line-height:1.45}
-  .footer{padding:32px 0;color:#7889ad;text-align:center;font-size:12px}
-  @media(max-width:980px){
-    .hero,.layout{grid-template-columns:1fr}
-    .sidebar{position:relative;top:auto}
-  }
-  @media(max-width:650px){
-    .app{padding:14px}
-    .chunk-grid,.kpi-grid,.row{grid-template-columns:1fr}
-    .hero-card{padding:22px}
-  }
+:root{--bg:#06111f;--bg2:#0a1728;--card:#0e2035;--card2:#122b43;--line:#27435e;--text:#edf7ff;--muted:#9db2c8;--cyan:#24d8c5;--blue:#56a8ff;--purple:#a77aff;--amber:#ffc85a;--green:#55d98b;--red:#ff6f7d;--shadow:0 18px 50px rgba(0,0,0,.28);--radius:22px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 85% 10%,rgba(167,122,255,.13),transparent 24%),radial-gradient(circle at 15% 2%,rgba(36,216,197,.12),transparent 25%),var(--bg);color:var(--text);line-height:1.55}a{color:inherit}.shell{width:min(1180px,calc(100% - 32px));margin:auto}.nav{position:sticky;top:0;z-index:30;background:rgba(6,17,31,.83);backdrop-filter:blur(16px);border-bottom:1px solid rgba(157,178,200,.15)}.navin{display:flex;align-items:center;justify-content:space-between;min-height:68px;gap:18px}.brand{font-weight:850;letter-spacing:.4px}.brand b{color:var(--cyan)}.navlinks{display:flex;gap:6px;flex-wrap:wrap}.navlinks a{font-size:13px;color:var(--muted);text-decoration:none;padding:8px 11px;border-radius:999px}.navlinks a:hover{background:var(--card);color:var(--text)}.hero{padding:92px 0 62px;display:grid;grid-template-columns:1.08fr .92fr;gap:48px;align-items:center}.eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(36,216,197,.34);background:rgba(36,216,197,.08);color:#87f4e9;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:800;letter-spacing:.12em}.dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px var(--cyan)}h1{font-size:clamp(44px,7vw,84px);line-height:.96;letter-spacing:-.055em;margin:22px 0 22px}.grad{background:linear-gradient(110deg,var(--cyan),var(--blue),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}.lead{font-size:18px;color:var(--muted);max-width:690px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.btn{border:0;border-radius:14px;padding:12px 17px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px}.primary{background:linear-gradient(110deg,var(--cyan),#66ece0);color:#06221f}.secondary{border:1px solid var(--line);background:var(--card);color:var(--text)}.heroMap{position:relative;min-height:430px}.orb{position:absolute;border-radius:50%;filter:blur(1px)}.centerNode{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:145px;height:145px;border-radius:50%;display:grid;place-items:center;text-align:center;background:linear-gradient(145deg,#132e47,#0a1728);border:2px solid var(--cyan);box-shadow:0 0 55px rgba(36,216,197,.2),var(--shadow);font-weight:900;font-size:23px}.sat{position:absolute;padding:12px 15px;border-radius:15px;background:rgba(14,32,53,.96);border:1px solid var(--line);font-weight:750;font-size:13px;box-shadow:var(--shadow);animation:float 5s ease-in-out infinite}.sat:nth-child(2){top:20px;left:42%;border-color:var(--purple)}.sat:nth-child(3){top:110px;right:0;border-color:var(--blue);animation-delay:-1s}.sat:nth-child(4){bottom:65px;right:12px;border-color:var(--amber);animation-delay:-2s}.sat:nth-child(5){bottom:20px;left:30%;border-color:var(--green);animation-delay:-3s}.sat:nth-child(6){top:155px;left:0;border-color:var(--cyan);animation-delay:-4s}@keyframes float{50%{transform:translateY(-8px)}}
+section{padding:70px 0}.sectionHead{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:28px}.kicker{font-size:12px;text-transform:uppercase;color:var(--cyan);font-weight:850;letter-spacing:.16em}.sectionHead h2{font-size:clamp(30px,4vw,48px);line-height:1.08;margin:8px 0 0;letter-spacing:-.035em}.sectionHead p{color:var(--muted);max-width:480px;margin:0}.grid{display:grid;gap:18px}.four{grid-template-columns:repeat(4,1fr)}.three{grid-template-columns:repeat(3,1fr)}.two{grid-template-columns:repeat(2,1fr)}.card{background:linear-gradient(145deg,rgba(18,43,67,.92),rgba(10,23,40,.94));border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}.card h3{margin:10px 0 8px;font-size:20px}.card p{color:var(--muted);margin:0}.stat{font-size:30px;font-weight:900;color:var(--cyan)}.icon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:rgba(36,216,197,.11);border:1px solid rgba(36,216,197,.3);font-size:23px}.flow{display:flex;gap:10px;align-items:stretch;overflow:auto;padding:6px 2px 15px}.step{min-width:154px;flex:1;border:1px solid var(--line);background:var(--card);border-radius:17px;padding:15px;position:relative}.step:not(:last-child):after{content:'›';position:absolute;right:-9px;top:35%;z-index:2;font-size:28px;color:var(--cyan)}.step small{color:var(--cyan);font-weight:850}.step b{display:block;margin:5px 0}.step span{font-size:12px;color:var(--muted)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tab{border:1px solid var(--line);background:transparent;color:var(--muted);padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:750}.tab.active{background:var(--cyan);color:#06221f;border-color:var(--cyan)}.pattern{display:none}.pattern.active{display:block}.patternGrid{display:grid;grid-template-columns:.92fr 1.08fr;gap:18px}.bullets{padding:0;list-style:none}.bullets li{padding:9px 0 9px 27px;position:relative;color:var(--muted)}.bullets li:before{content:'✓';position:absolute;left:0;color:var(--green);font-weight:900}.badge{display:inline-block;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:850;background:rgba(86,168,255,.12);color:#9bd0ff;border:1px solid rgba(86,168,255,.25);margin:3px}.matrix{overflow:auto}.matrix table{width:100%;border-collapse:collapse;min-width:850px}.matrix th,.matrix td{padding:14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.matrix th{color:var(--cyan);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.matrix td{color:var(--muted)}.matrix td:first-child{color:var(--text);font-weight:800}.low{color:var(--green)!important}.med{color:var(--amber)!important}.high{color:var(--red)!important}
+.sim{display:grid;grid-template-columns:340px 1fr;gap:20px}.controls label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:700}.controls select,.controls input[type=text]{width:100%;border-radius:12px;border:1px solid var(--line);background:#071625;color:var(--text);padding:12px}.controls input[type=range]{width:100%;accent-color:var(--cyan)}.toggleRow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;color:var(--muted)}.switch{width:42px;height:24px;border-radius:999px;background:#23405a;position:relative;cursor:pointer}.switch:after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:white;left:3px;top:3px;transition:.2s}.switch.on{background:var(--cyan)}.switch.on:after{left:21px}.simstage{min-height:530px}.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;align-items:center}.pipeNode{min-height:84px;border:1px solid var(--line);background:#0a192b;border-radius:16px;padding:13px;text-align:center;transition:.25s}.pipeNode.active{border-color:var(--cyan);box-shadow:0 0 28px rgba(36,216,197,.16);transform:translateY(-3px)}.pipeNode b{display:block}.pipeNode small{color:var(--muted)}.log{height:230px;overflow:auto;background:#040c16;border:1px solid #1c354d;border-radius:15px;padding:14px;margin-top:18px;font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:#a8c1d8}.log .ok{color:var(--green)}.log .info{color:var(--cyan)}.log .warn{color:var(--amber)}.scoregrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.score{background:#0a192b;border:1px solid var(--line);border-radius:14px;padding:12px}.score b{font-size:20px;color:var(--cyan);display:block}.score span{font-size:11px;color:var(--muted)}.architecture{position:relative;padding:25px;min-height:520px}.lane{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:34px 0}.archNode{text-align:center;border-radius:16px;padding:17px 10px;background:var(--card);border:1px solid var(--line);position:relative}.archNode:not(:last-child):after{content:'→';position:absolute;right:-17px;color:var(--cyan);top:30%;font-size:23px}.callout{border-left:3px solid var(--amber);background:rgba(255,200,90,.08);padding:14px 16px;border-radius:0 12px 12px 0;color:#f3dca4}.accordion{border:1px solid var(--line);border-radius:16px;margin:10px 0;overflow:hidden;background:var(--card)}.accBtn{width:100%;padding:17px 18px;text-align:left;border:0;background:transparent;color:var(--text);font-size:15px;font-weight:800;cursor:pointer;display:flex;justify-content:space-between}.accBody{display:none;padding:0 18px 18px;color:var(--muted)}.accordion.open .accBody{display:block}.accordion.open .plus{transform:rotate(45deg)}footer{padding:50px 0 70px;color:var(--muted);border-top:1px solid var(--line)}.sources a{color:#9bd0ff}.toast{position:fixed;bottom:18px;right:18px;background:var(--text);color:#06111f;padding:12px 16px;border-radius:12px;font-weight:800;transform:translateY(100px);transition:.25s;z-index:50}.toast.show{transform:translateY(0)}
+@media(max-width:920px){.hero,.patternGrid,.sim{grid-template-columns:1fr}.heroMap{min-height:360px}.four{grid-template-columns:repeat(2,1fr)}.three,.two{grid-template-columns:1fr 1fr}.pipeline{grid-template-columns:1fr}.pipeNode{min-height:auto}.pipeNode:after{display:none}.navlinks{display:none}}@media(max-width:600px){.four,.three,.two{grid-template-columns:1fr}.sectionHead{display:block}.sectionHead p{margin-top:12px}.hero{padding-top:60px}.heroMap{transform:scale(.88)}.scoregrid{grid-template-columns:1fr 1fr}.lane{grid-template-columns:1fr}.archNode:after{display:none}}
+
+.useCase{position:relative;overflow:hidden}.useCase:before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--accent,var(--cyan))}.useCase .industry{font-size:11px;color:var(--accent,var(--cyan));font-weight:900;letter-spacing:.12em;text-transform:uppercase}.useCase h3{margin-top:7px}.caseFlow{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:15px 0}.caseFlow span{background:#091a2c;border:1px solid var(--line);padding:6px 8px;border-radius:9px;font-size:11px}.caseFlow i{color:var(--accent,var(--cyan));font-style:normal}.outcome{padding:11px;border-radius:12px;background:rgba(85,217,139,.08);border:1px solid rgba(85,217,139,.22);color:#b8f4d0;font-size:12px}.decisionExplain{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.criterion{padding:13px 0;border-bottom:1px solid var(--line)}.criterion b{display:block;color:var(--text)}.criterion span{font-size:12px;color:var(--muted)}.advisor{background:linear-gradient(145deg,rgba(167,122,255,.11),rgba(36,216,197,.06))}.advisor label{display:block;font-size:12px;color:var(--muted);font-weight:800;margin:12px 0 5px}.advisor select{width:100%;background:#071625;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:10px}.recommendation{margin-top:15px;padding:14px;border:1px solid var(--cyan);border-radius:14px;background:rgba(36,216,197,.07)}.recommendation b{color:var(--cyan);font-size:20px}.recommendation p{font-size:12px;color:var(--muted);margin:5px 0 0}
+@media(max-width:920px){.decisionExplain{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="app">
-  <section class="hero">
-    <div class="hero-card">
-      <div class="eyebrow">Interactive AI learning lab</div>
-      <h1>RAG Simulator</h1>
-      <div class="sub">
-        Learn Retrieval-Augmented Generation by simulating the full flow:
-        ingest knowledge, chunk it, create embeddings, retrieve Top-K context,
-        rerank it, augment the prompt, and generate a grounded answer.
-      </div>
-      <div class="badge-row">
-        <div class="badge">Ingestion</div><div class="badge">Chunking</div>
-        <div class="badge">Embeddings</div><div class="badge">Vector Search</div>
-        <div class="badge">Top-K</div><div class="badge">Reranking</div>
-        <div class="badge">Prompt Augmentation</div><div class="badge">Generation</div>
-      </div>
-    </div>
-    <div class="mini-card">
-      <div>
-        <div class="eyebrow">Core mental model</div>
-        <div class="score">R → A → G</div>
-        <div class="sub" style="font-size:14px">Retrieve relevant knowledge → Augment the prompt → Generate a grounded answer.</div>
-      </div>
-      <div class="callout">Key idea: chunking + embedding usually happen before the user's question, during indexing.</div>
-    </div>
-  </section>
+<nav class="nav"><div class="shell navin"><div class="brand"><b>RAG</b> ATLAS</div><div class="navlinks"><a href="#foundation">Foundation</a><a href="#patterns">Patterns</a><a href="#architecture">Architecture</a><a href="#usecases">Use cases</a><a href="#simulator">Simulator</a><a href="#evaluation">Evaluation</a><a href="#security">Security</a></div></div></nav>
+<header class="shell hero"><div><span class="eyebrow"><i class="dot"></i> INTERACTIVE KNOWLEDGE ARTICLE</span><h1>Understand <span class="grad">RAG</span> from first principles to agentic systems.</h1><p class="lead">Explore visual message flows, compare architecture patterns, tune a retrieval pipeline, and see how design choices change quality, latency, cost, and governance.</p><div class="actions"><a class="btn primary" href="#simulator">Launch simulator ↓</a><a class="btn secondary" href="#patterns">Explore patterns</a></div></div><div class="heroMap" aria-label="RAG mind map"><div class="centerNode">RAG<br><small style="font-size:11px;color:var(--muted)">retrieve • augment • generate</small></div><div class="sat">Agentic RAG</div><div class="sat">GraphRAG</div><div class="sat">Corrective RAG</div><div class="sat">Multimodal RAG</div><div class="sat">Hybrid Search</div></div></header>
+<main>
+<section id="foundation"><div class="shell"><div class="sectionHead"><div><div class="kicker">01 · Foundation</div><h2>The RAG mental model</h2></div><p>RAG connects an LLM to external knowledge at query time. The model receives retrieved evidence in its prompt, then produces a response grounded in that evidence.</p></div><div class="grid four"><article class="card"><div class="icon">◌</div><h3>Retrieve</h3><p>Find candidate evidence using lexical, vector, graph, SQL, API, or multimodal search.</p></article><article class="card"><div class="icon">◇</div><h3>Augment</h3><p>Rank, filter, compress, cite, and assemble the strongest context inside a prompt.</p></article><article class="card"><div class="icon">✦</div><h3>Generate</h3><p>Ask the LLM to answer from the supplied evidence and follow response constraints.</p></article><article class="card"><div class="icon">✓</div><h3>Evaluate</h3><p>Measure retrieval recall, groundedness, answer relevance, latency, cost, and safety.</p></article></div><div class="card" style="margin-top:18px"><div class="flow"><div class="step"><small>01</small><b>User query</b><span>Intent and conversation context</span></div><div class="step"><small>02</small><b>Transform</b><span>Rewrite, expand, classify, or decompose</span></div><div class="step"><small>03</small><b>Retrieve</b><span>Search one or more knowledge sources</span></div><div class="step"><small>04</small><b>Rank</b><span>Fuse, rerank, filter, and compress</span></div><div class="step"><small>05</small><b>Generate</b><span>Answer with evidence and citations</span></div><div class="step"><small>06</small><b>Verify</b><span>Check support, policy, and completeness</span></div></div></div></div></section>
+<section id="patterns"><div class="shell"><div class="sectionHead"><div><div class="kicker">02 · Patterns</div><h2>Eight ways RAG can work</h2></div><p>Select a pattern to inspect its message flow, strengths, failure modes, and ideal use cases.</p></div><div class="tabs" id="tabs"></div><div id="patternHost"></div></div></section>
+<section id="architecture"><div class="shell"><div class="sectionHead"><div><div class="kicker">03 · Reference architecture</div><h2>Production RAG is a system, not a prompt</h2></div><p>The online query path depends on a reliable offline content pipeline, shared controls, observability, and a disciplined evaluation loop.</p></div><div class="card architecture"><div class="kicker">Offline knowledge pipeline</div><div class="lane"><div class="archNode">Sources<br><small>Docs, web, DB, media</small></div><div class="archNode">Parse<br><small>OCR, tables, layouts</small></div><div class="archNode">Enrich<br><small>Metadata, ACL, entities</small></div><div class="archNode">Chunk + embed<br><small>Semantic units</small></div><div class="archNode">Index<br><small>Vector, lexical, graph</small></div></div><div class="kicker">Online query pipeline</div><div class="lane"><div class="archNode">Gateway<br><small>Auth, rate limit</small></div><div class="archNode">Orchestrator<br><small>Intent, route, plan</small></div><div class="archNode">Retrievers<br><small>Search and tools</small></div><div class="archNode">Context builder<br><small>Rerank and cite</small></div><div class="archNode">LLM + verifier<br><small>Answer and validate</small></div></div><div class="callout"><b>Cross-cutting controls:</b> identity and ACL trimming, content safety, prompt-injection defense, provenance, caching, telemetry, evaluation datasets, cost budgets, data lifecycle, and human review.</div></div></div></section>
 
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="panel">
-        <h3>1. Knowledge source</h3>
-        <label>Documents</label>
-        <textarea id="knowledge">Enterprise refund policy: Enterprise customers may request a refund within 30 days of initial purchase if service usage is below 10% of contracted capacity.
-
-Cancellation policy: Enterprise contracts may be cancelled at renewal unless otherwise specified in the master service agreement.
-
-Billing FAQ: Refund requests must include the customer account ID, invoice number, and business justification.
-
-Security policy: Customer data is encrypted in transit and at rest. Access is controlled with role-based permissions.</textarea>
-        <button class="btn secondary" onclick="loadSample()">Load sample knowledge</button>
-      </div>
-
-      <div class="panel">
-        <h3>2. Retrieval controls</h3>
-        <label>Chunk size <span id="chunkSizeLabel">120</span> chars</label>
-        <input id="chunkSize" type="range" min="60" max="240" value="120" oninput="syncLabels();runPipeline()" />
-        <label>Chunk overlap <span id="overlapLabel">20</span> chars</label>
-        <input id="overlap" type="range" min="0" max="60" value="20" oninput="syncLabels();runPipeline()" />
-        <label>Top-K <span id="topKLabel">3</span></label>
-        <input id="topK" type="range" min="1" max="6" value="3" oninput="syncLabels();runPipeline()" />
-        <label>Retrieval method</label>
-        <select id="method" onchange="runPipeline()">
-          <option value="hybrid">Hybrid search</option>
-          <option value="semantic">Semantic / vector search</option>
-          <option value="keyword">Keyword search</option>
-        </select>
-        <label>Use reranking</label>
-        <select id="rerank" onchange="runPipeline()">
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-        </select>
-      </div>
-
-      <div class="panel">
-        <h3>3. User query</h3>
-        <textarea id="query">What is the refund policy for enterprise customers?</textarea>
-        <button class="btn" onclick="runPipeline()">Run RAG pipeline</button>
-        <button class="btn ghost" style="margin-top:8px" onclick="resetDemo()">Reset</button>
-      </div>
-    </aside>
-
-    <main class="steps">
-      <section class="step active">
-        <div class="step-head"><div class="num">1</div><div><h2>Ingest knowledge</h2><p>Bring enterprise information into a searchable knowledge pipeline.</p></div></div>
-        <div class="flow"><div class="node">PDFs</div><div class="node">Web pages</div><div class="node">Tickets</div><div class="arrow">→</div><div class="node">Parser / cleaner</div><div class="arrow">→</div><div class="node">Normalized text</div></div>
-        <div class="tiny">In production, this stage can also extract metadata such as document title, author, date, business unit, security classification, and source URL.</div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">2</div><div><h2>Chunk documents</h2><p>Split large sources into retrievable passages. Chunk size and overlap affect recall and precision.</p></div></div>
-        <div id="chunks" class="chunk-grid"></div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">3</div><div><h2>Create embeddings + index</h2><p>Convert chunks into numerical vectors and store them with metadata in a searchable index.</p></div></div>
-        <div class="flow"><div class="node">Chunk text</div><div class="arrow">→</div><div class="node">Embedding model</div><div class="arrow">→</div><div class="node">Vector + metadata</div><div class="arrow">→</div><div class="node">Vector DB</div></div>
-        <div id="vectors" class="chunk-grid"></div>
-        <div class="callout">Important: this is normally an offline/indexing step. You do not usually re-chunk and re-embed the whole knowledge base for every user query.</div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">4</div><div><h2>Embed / understand the query</h2><p>The user's question is represented so it can be compared with indexed knowledge.</p></div></div>
-        <div id="queryView" class="prompt-box"></div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">5</div><div><h2>Retrieve Top-K chunks</h2><p>Search for the most relevant passages using semantic similarity, keyword matching, or both.</p></div></div>
-        <div id="retrievalResults" class="results"></div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">6</div><div><h2>Rerank retrieved context</h2><p>A reranker can reorder candidate chunks using a stronger relevance model.</p></div></div>
-        <div id="rerankResults" class="results"></div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">7</div><div><h2>Augment the prompt</h2><p>Insert retrieved context alongside instructions and the user's question.</p></div></div>
-        <div id="prompt" class="prompt-box"></div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">8</div><div><h2>Generate grounded answer</h2><p>The LLM answers using the supplied context instead of relying only on model memory.</p></div></div>
-        <div id="answer" class="answer"></div>
-      </section>
-
-      <section class="step active">
-        <div class="step-head"><div class="num">9</div><div><h2>Evaluate the RAG system</h2><p>Good RAG is not just “did the LLM respond?” Measure retrieval and answer quality.</p></div></div>
-        <div class="kpi-grid">
-          <div class="kpi"><b id="kpiRecall">—</b><span>Retrieval relevance</span></div>
-          <div class="kpi"><b id="kpiGround">—</b><span>Groundedness</span></div>
-          <div class="kpi"><b id="kpiContext">—</b><span>Context efficiency</span></div>
-          <div class="kpi"><b id="kpiRisk">—</b><span>Hallucination risk</span></div>
-        </div>
-        <div class="callout">Production teams also evaluate latency, cost, citation accuracy, security filtering, freshness, recall@K, precision@K, answer faithfulness, and user satisfaction.</div>
-      </section>
-    </main>
-  </div>
-
-  <div class="footer">Educational simulator • Runs entirely in your browser • No external AI API required</div>
-</div>
-
+<section id="usecases"><div class="shell"><div class="sectionHead"><div><div class="kicker">04 · Real-world applications</div><h2>Where RAG creates practical value</h2></div><p>These operational patterns show how organizations connect questions to governed evidence, not just how they build a chatbot.</p></div><div class="grid three">
+<article class="card useCase" style="--accent:var(--blue)"><div class="industry">Customer service</div><h3>Agent and customer support</h3><p>Ground answers in product manuals, account policies, troubleshooting guides, and current service notices.</p><div class="caseFlow"><span>Question</span><i>→</i><span>Hybrid search</span><i>→</i><span>Answer + next action</span></div><div class="outcome">Measure: containment rate, first-contact resolution, handling time, citation usage.</div></article>
+<article class="card useCase" style="--accent:var(--cyan)"><div class="industry">HR and enterprise</div><h3>Employee knowledge assistant</h3><p>Answer policy, benefits, onboarding, travel, and process questions while respecting document permissions.</p><div class="caseFlow"><span>Identity</span><i>→</i><span>ACL-filtered retrieval</span><i>→</i><span>Cited answer</span></div><div class="outcome">Measure: search time saved, answer acceptance, escalation rate, access-policy violations.</div></article>
+<article class="card useCase" style="--accent:var(--purple)"><div class="industry">Financial services</div><h3>Research and regulatory intelligence</h3><p>Connect filings, policies, research notes, market commentary, and structured data for evidence-backed analysis.</p><div class="caseFlow"><span>Complex question</span><i>→</i><span>Multi-source retrieval</span><i>→</i><span>Analyst brief</span></div><div class="outcome">Measure: evidence coverage, citation precision, review effort, freshness.</div></article>
+<article class="card useCase" style="--accent:var(--green)"><div class="industry">Healthcare</div><h3>Clinical and operational knowledge</h3><p>Retrieve guidelines, care pathways, drug information, and local procedures to support qualified professionals.</p><div class="caseFlow"><span>Clinical context</span><i>→</i><span>Trusted corpus</span><i>→</i><span>Decision support</span></div><div class="outcome">Guardrail: the system supports, but does not replace, clinician judgment.</div></article>
+<article class="card useCase" style="--accent:var(--amber)"><div class="industry">Manufacturing</div><h3>Maintenance and engineering copilot</h3><p>Search manuals, service bulletins, sensor context, diagrams, and historical incident records.</p><div class="caseFlow"><span>Asset + symptom</span><i>→</i><span>Multimodal retrieval</span><i>→</i><span>Procedure</span></div><div class="outcome">Measure: mean time to repair, first-time fix rate, procedure compliance.</div></article>
+<article class="card useCase" style="--accent:var(--red)"><div class="industry">Legal and compliance</div><h3>Contract and obligation analysis</h3><p>Locate clauses, precedents, policies, obligations, and regulatory references across large repositories.</p><div class="caseFlow"><span>Matter</span><i>→</i><span>Metadata + semantic search</span><i>→</i><span>Review pack</span></div><div class="outcome">Measure: recall of relevant clauses, review time, citation accuracy, auditability.</div></article>
+<article class="card useCase" style="--accent:var(--cyan)"><div class="industry">Retail and commerce</div><h3>Conversational product discovery</h3><p>Translate natural-language needs into products using catalog attributes, availability, reviews, and policies.</p><div class="caseFlow"><span>Need</span><i>→</i><span>Hybrid catalog search</span><i>→</i><span>Grounded options</span></div><div class="outcome">Measure: search success, conversion, return rate, recommendation diversity.</div></article>
+<article class="card useCase" style="--accent:var(--blue)"><div class="industry">Software engineering</div><h3>Developer and operations assistant</h3><p>Ground responses in source code, runbooks, architecture records, tickets, incidents, and live telemetry.</p><div class="caseFlow"><span>Error or task</span><i>→</i><span>Code + runbook retrieval</span><i>→</i><span>Diagnosis</span></div><div class="outcome">Measure: resolution time, accepted suggestions, rollback rate, unsafe-action blocks.</div></article>
+<article class="card useCase" style="--accent:var(--purple)"><div class="industry">Research and education</div><h3>Evidence synthesis and tutoring</h3><p>Decompose broad questions, retrieve multiple documents, compare claims, and adapt explanations to the learner.</p><div class="caseFlow"><span>Research goal</span><i>→</i><span>Agentic retrieval</span><i>→</i><span>Synthesis</span></div><div class="outcome">Measure: source diversity, claim support, learning outcomes, unsupported assertions.</div></article>
+</div><div class="callout" style="margin-top:18px"><b>Examples in practice:</b> Microsoft describes AUDI AG using an AI-powered HR assistant for employee self-service, and Air India using a generative AI virtual assistant for customer support. AWS documents RAG applications across search, healthcare, legal, retail, manufacturing, and question answering. See the linked sources in Further reading.</div></div></section>
+<section id="simulator"><div class="shell"><div class="sectionHead"><div><div class="kicker">05 · Interactive simulator</div><h2>Tune a RAG pipeline</h2></div><p>This educational simulator uses deterministic heuristics, not a live LLM or search index. Adjust settings to see expected architectural trade-offs.</p></div><div class="sim"><aside class="card controls"><label>Scenario</label><select id="scenario"><option value="policy">Enterprise policy Q&A</option><option value="support">Product support</option><option value="research">Multi-document research</option><option value="visual">Visual document analysis</option></select><label>Architecture</label><select id="arch"><option>Naive RAG</option><option>Advanced RAG</option><option>Hybrid RAG</option><option>GraphRAG</option><option>Corrective RAG</option><option>Self-RAG</option><option>Agentic RAG</option><option>Multimodal RAG</option></select><label>Query</label><input id="query" type="text" value="What changed in the remote work policy, and why?"/><label>Top-K documents: <b id="kval">5</b></label><input id="topk" type="range" min="1" max="15" value="5"/><label>Chunk size: <b id="cval">600</b> tokens</label><input id="chunk" type="range" min="200" max="1400" step="100" value="600"/><div class="toggleRow"><span>Query rewrite</span><i class="switch on" data-key="rewrite"></i></div><div class="toggleRow"><span>Reranking</span><i class="switch on" data-key="rerank"></i></div><div class="toggleRow"><span>Answer verification</span><i class="switch" data-key="verify"></i></div><button class="btn primary" id="run" style="width:100%;justify-content:center;margin-top:14px">Run simulation ▶</button></aside><div class="card simstage"><div class="pipeline" id="pipeline"><div class="pipeNode"><b>Query</b><small>Receive intent</small></div><div class="pipeNode"><b>Transform</b><small>Rewrite or plan</small></div><div class="pipeNode"><b>Retrieve</b><small>Fetch candidates</small></div><div class="pipeNode"><b>Generate</b><small>Build grounded answer</small></div><div class="pipeNode"><b>Verify</b><small>Check evidence</small></div></div><div class="scoregrid"><div class="score"><b id="quality">--</b><span>Expected quality</span></div><div class="score"><b id="latency">--</b><span>Relative latency</span></div><div class="score"><b id="cost">--</b><span>Relative cost</span></div><div class="score"><b id="risk">--</b><span>Hallucination risk</span></div></div><div class="log" id="log"><span class="info">Ready.</span> Configure the pipeline and run a simulation.</div></div></div></div></section>
+<section id="evaluation"><div class="shell"><div class="sectionHead"><div><div class="kicker">06 · Evaluation</div><h2>Measure the chain, not only the answer</h2></div><p>Separate retrieval performance from generation performance so that failures can be diagnosed and improved systematically.</p></div><div class="grid three"><article class="card"><div class="stat">R@K</div><h3>Retrieval quality</h3><p>Recall@K, precision@K, MRR, nDCG, context relevance, coverage, and diversity.</p></article><article class="card"><div class="stat">Faith</div><h3>Generation quality</h3><p>Faithfulness, answer relevance, completeness, citation correctness, and refusal quality.</p></article><article class="card"><div class="stat">SLO</div><h3>Operational quality</h3><p>P50/P95 latency, token usage, cost per answer, cache hit rate, error rate, and freshness.</p></article></div><div class="card matrix" style="margin-top:18px"><table><thead><tr><th>Failure signal</th><th>Likely root cause</th><th>First intervention</th></tr></thead><tbody><tr><td>Correct document never appears</td><td>Embedding mismatch, weak metadata, poor chunking</td><td>Improve content segmentation, add hybrid retrieval, tune filters</td></tr><tr><td>Good evidence ranks too low</td><td>Similarity is not enough</td><td>Add reranking or reciprocal-rank fusion</td></tr><tr><td>Answer ignores retrieved evidence</td><td>Prompt structure or context overload</td><td>Compress context, strengthen citation rules, evaluate faithfulness</td></tr><tr><td>Complex question is partially answered</td><td>Single-pass retrieval cannot cover all subquestions</td><td>Decompose query or use agentic retrieval</td></tr><tr><td>Latency and cost spike</td><td>Large K, long chunks, repeated loops</td><td>Cache, bound retries, use smaller models for routing and grading</td></tr></tbody></table></div></div></section>
+<section id="security"><div class="shell"><div class="sectionHead"><div><div class="kicker">07 · Security and governance</div><h2>Trust requires controls at every hop</h2></div><p>Retrieved content is untrusted input. Secure RAG must enforce authorization and defend the model from malicious or misleading context.</p></div><div class="grid two"><div><div class="accordion open"><button class="accBtn">Authorization and data isolation <span class="plus">+</span></button><div class="accBody">Apply identity-aware retrieval and document-level security trimming before content reaches the model. Preserve tenant, geography, sensitivity, and purpose restrictions.</div></div><div class="accordion"><button class="accBtn">Prompt injection and poisoned content <span class="plus">+</span></button><div class="accBody">Treat retrieved instructions as data, not authority. Use content classifiers, source allow-lists, instruction hierarchy, adversarial testing, and explicit tool permission boundaries.</div></div><div class="accordion"><button class="accBtn">Privacy and lifecycle <span class="plus">+</span></button><div class="accBody">Minimize sensitive data, redact where needed, encrypt in transit and at rest, manage retention, and propagate deletions across indexes, caches, logs, and evaluation stores.</div></div></div><div class="card"><h3>Minimum production checklist</h3><ul class="bullets"><li>Source provenance and clickable citations</li><li>Access-control filtering before ranking</li><li>Input and output safety policies</li><li>Grounded refusal when evidence is inadequate</li><li>Trace IDs across retrieval, prompt, and answer</li><li>Golden dataset plus adversarial evaluation</li><li>Human approval for high-impact actions</li><li>Explicit latency, cost, and retry budgets</li></ul></div></div></div></section>
+<section><div class="shell"><div class="sectionHead"><div><div class="kicker">08 · Decision guide</div><h2>Choose the minimum sufficient architecture</h2></div><p>Complexity should answer a measured need. Start with a baseline and evolve only when evaluation shows a specific failure pattern.</p></div><div class="card matrix"><table><thead><tr><th>Pattern</th><th>Best when</th><th>Complexity</th><th>Latency</th><th>Watch-out</th></tr></thead><tbody><tr><td>Naive</td><td>Focused factual Q&A</td><td class="low">Low</td><td class="low">Low</td><td>Retrieval noise</td></tr><tr><td>Advanced</td><td>Recall or context quality needs improvement</td><td class="med">Medium</td><td class="med">Medium</td><td>Pipeline tuning</td></tr><tr><td>Hybrid</td><td>Exact terms and semantic meaning both matter</td><td class="med">Medium</td><td class="med">Medium</td><td>Fusion calibration</td></tr><tr><td>GraphRAG</td><td>Relationships and corpus-wide themes matter</td><td class="high">High</td><td class="high">High</td><td>Indexing cost</td></tr><tr><td>Corrective / Self-RAG</td><td>Evidence is inconsistent or uncertain</td><td class="high">High</td><td class="high">High</td><td>Evaluation loops</td></tr><tr><td>Agentic</td><td>Tasks need decomposition, multiple tools, or actions</td><td class="high">Very high</td><td class="high">Variable</td><td>Control and observability</td></tr><tr><td>Multimodal</td><td>Answers depend on images, scans, audio, or video</td><td class="high">High</td><td class="high">High</td><td>Cross-modal evaluation</td></tr></tbody></table></div>
+<div class="decisionExplain"><div class="card"><h3>How to read the architecture decision matrix</h3><div class="criterion"><b>1. Start with the question shape</b><span>Single-fact questions favour Naive or Hybrid RAG. Multi-hop, comparative, or investigative questions may need GraphRAG or Agentic RAG.</span></div><div class="criterion"><b>2. Inspect the evidence shape</b><span>Use Hybrid RAG for exact identifiers plus semantics, GraphRAG for relationships, Multimodal RAG for visual or audio evidence, and Federated retrieval for governed silos.</span></div><div class="criterion"><b>3. Decide how adaptive retrieval must be</b><span>If retrieved evidence is often weak, add Corrective RAG. If retrieval should happen only when needed, use Self-RAG. If the task must plan or call tools, use Agentic RAG.</span></div><div class="criterion"><b>4. Apply non-functional constraints</b><span>Complex patterns increase latency, token consumption, observability needs, and operational risk. Security, freshness, and provenance can eliminate an otherwise attractive option.</span></div><div class="criterion"><b>5. Prove the increment</b><span>Compare every advanced design against a Naive or Hybrid baseline using the same golden dataset. Adopt added complexity only when its quality gain justifies its cost.</span></div></div>
+<div class="card advisor"><div class="kicker">Architecture advisor</div><h3>Translate requirements into a starting pattern</h3><label>Question complexity</label><select id="dQuestion"><option value="simple">Simple factual lookup</option><option value="exact">Exact terms plus semantic meaning</option><option value="multi">Multi-hop or relationship-heavy</option><option value="task">Complex task requiring planning</option></select><label>Evidence condition</label><select id="dEvidence"><option value="curated">Curated and consistent</option><option value="noisy">Noisy or variable quality</option><option value="visual">Includes images, scans, audio, or video</option><option value="siloed">Distributed across governed silos</option></select><label>Operational priority</label><select id="dPriority"><option value="speed">Lowest latency and cost</option><option value="quality">Highest evidence quality</option><option value="control">Adaptive verification and control</option></select><div class="recommendation"><span>Recommended starting point</span><b id="dResult">Naive RAG</b><p id="dReason">Use a simple retrieve-and-generate baseline, then evaluate retrieval recall and answer faithfulness.</p></div></div></div>
+</div></section>
+</main>
+<footer><div class="shell"><div class="grid two"><div><div class="brand"><b>RAG</b> ATLAS</div><p>Single-file interactive learning experience. No external libraries, build steps, or network calls are required.</p></div><div class="sources"><b>Further reading</b><p><a href="https://arxiv.org/abs/2005.11401" target="_blank">Original RAG paper</a> · <a href="https://arxiv.org/abs/2312.10997" target="_blank">RAG survey</a> · <a href="https://microsoft.github.io/graphrag/" target="_blank">Microsoft GraphRAG</a> · <a href="https://arxiv.org/abs/2310.11511" target="_blank">Self-RAG</a> · <a href="https://arxiv.org/abs/2401.15884" target="_blank">CRAG</a> · <a href="https://arxiv.org/abs/2501.09136" target="_blank">Agentic RAG survey</a> · <a href="https://www.microsoft.com/en/customers/story/24786-audi-ag-azure-ai-foundry" target="_blank">AUDI HR assistant</a> · <a href="https://www.microsoft.com/en/customers/story/19768-air-india-azure-open-ai-service" target="_blank">Air India assistant</a> · <a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/retrieval-augmented-generation-options/rag-use-cases.html" target="_blank">AWS RAG use cases</a></p></div></div></div></footer><div class="toast" id="toast">Simulation complete</div>
 <script>
-const STOP = new Set("the a an and or of to in for on is are was were be been being with as by at from that this it may if must below above into user users customer customers".split(" "));
+const patterns={
+'Naive RAG':{color:'var(--blue)',tag:'Linear baseline',desc:'A single retrieve-then-generate pass. Fast to build and easy to trace.',flow:['Query','Embed','Vector search','Top-K chunks','Prompt','Answer'],best:['Focused factual Q&A','Small, curated knowledge bases','Proofs of concept'],fail:['Poor chunking','Semantic ambiguity','No correction loop']},
+'Advanced RAG':{color:'var(--cyan)',tag:'Optimized pipeline',desc:'Adds pre-retrieval and post-retrieval optimization around the baseline.',flow:['Query','Rewrite / expand','Retrieve','Rerank','Compress','Generate'],best:['Enterprise knowledge assistants','Noisy or varied content','Higher precision requirements'],fail:['More tuning surfaces','Higher latency','Evaluation complexity']},
+'Hybrid RAG':{color:'var(--amber)',tag:'Dense + lexical',desc:'Combines semantic vector search with exact-match lexical search, then fuses results.',flow:['Query','Vector search','BM25 search','RRF fusion','Rerank','Generate'],best:['Product codes and names','Policies and legal text','Support knowledge'],fail:['Fusion calibration','Duplicate results','Multiple index operations']},
+'GraphRAG':{color:'var(--purple)',tag:'Structure-aware',desc:'Retrieves entities, relationships, text units, and community summaries for connected reasoning.',flow:['Question','Entity mapping','Graph traversal','Community context','Evidence merge','Answer'],best:['Multi-hop questions','Corpus-wide themes','Relationship analysis'],fail:['Expensive indexing','Entity resolution','Graph freshness']},
+'Corrective RAG':{color:'var(--red)',tag:'Evidence repair',desc:'Grades retrieved evidence and routes to refinement or alternative retrieval when quality is weak.',flow:['Retrieve','Grade evidence','Route','Rewrite / web search','Refine','Generate'],best:['Variable source quality','Fresh knowledge needs','High-confidence Q&A'],fail:['Grader errors','Extra calls','Unbounded retries']},
+'Self-RAG':{color:'var(--green)',tag:'Self-reflective',desc:'The model decides when to retrieve and critiques relevance, support, and usefulness while generating.',flow:['Assess need','Retrieve if needed','Generate segment','Critique','Retry or continue','Answer'],best:['Adaptive retrieval','Long generation','Evidence-sensitive tasks'],fail:['Complex training or prompting','Loop cost','Unstable critique']},
+'Agentic RAG':{color:'var(--purple)',tag:'Plan + tools',desc:'An orchestrator decomposes goals, calls retrievers and tools, merges evidence, and verifies outcomes.',flow:['Goal','Plan','Parallel subqueries','Tools + sources','Merge','Verify / act'],best:['Complex research','Multi-system workflows','Action-oriented assistants'],fail:['Control risk','Latency variance','Harder observability']},
+'Multimodal RAG':{color:'var(--blue)',tag:'Beyond text',desc:'Indexes and retrieves across text, images, pages, audio, and video using modality-aware representations.',flow:['Question + media','Encode modalities','Cross-modal search','Retrieve assets','Multimodal prompt','Answer'],best:['Scanned forms','Technical diagrams','Audio or video archives'],fail:['OCR and parse errors','Large storage','Evaluation difficulty']}}
+const tabs=document.getElementById('tabs'),host=document.getElementById('patternHost');
+function renderPattern(name){[...tabs.children].forEach(x=>x.classList.toggle('active',x.textContent===name));const p=patterns[name];host.innerHTML=`<article class="card pattern active"><div class="patternGrid"><div><span class="badge" style="color:${p.color};border-color:${p.color}">${p.tag}</span><h3 style="font-size:30px;margin:12px 0">${name}</h3><p>${p.desc}</p><div style="margin-top:19px"><b>Best suited for</b><ul class="bullets">${p.best.map(x=>`<li>${x}</li>`).join('')}</ul><b>Common failure modes</b><div>${p.fail.map(x=>`<span class="badge">${x}</span>`).join('')}</div></div></div><div><div class="kicker">Message flow</div><div class="flow" style="margin-top:12px">${p.flow.map((x,i)=>`<div class="step" style="min-width:125px"><small>0${i+1}</small><b>${x}</b></div>`).join('')}</div><div class="callout" style="margin-top:16px"><b>Architect insight:</b> Evaluate this pattern against the simplest baseline using the same dataset, queries, latency budget, and quality rubric.</div></div></div></article>`}
+Object.keys(patterns).forEach((n,i)=>{const b=document.createElement('button');b.className='tab'+(i===0?' active':'');b.textContent=n;b.onclick=()=>renderPattern(n);tabs.appendChild(b)});renderPattern('Naive RAG');
+document.querySelectorAll('.accordion').forEach(a=>a.querySelector('.accBtn').onclick=()=>a.classList.toggle('open'));
+const state={rewrite:true,rerank:true,verify:false};document.querySelectorAll('.switch').forEach(s=>s.onclick=()=>{s.classList.toggle('on');state[s.dataset.key]=s.classList.contains('on')});
+const topk=document.getElementById('topk'),chunk=document.getElementById('chunk');topk.oninput=()=>document.getElementById('kval').textContent=topk.value;chunk.oninput=()=>document.getElementById('cval').textContent=chunk.value;
+const bases={'Naive RAG':[68,1,1,32],'Advanced RAG':[79,2.1,1.8,22],'Hybrid RAG':[82,2.2,1.9,20],'GraphRAG':[86,4.3,3.8,17],'Corrective RAG':[85,3.7,3.1,14],'Self-RAG':[87,4.1,3.5,13],'Agentic RAG':[90,5.2,4.8,11],'Multimodal RAG':[84,4.6,4.1,18]};
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}async function run(){const nodes=[...document.querySelectorAll('.pipeNode')],log=document.getElementById('log'),arch=document.getElementById('arch').value,q=document.getElementById('query').value||'Untitled query';log.innerHTML='';nodes.forEach(n=>n.classList.remove('active'));const msgs=[`Received query: “${q}”`,state.rewrite?'Rewrote query and inferred retrieval intent.':'Passed original query without transformation.',`Retrieved ${topk.value} candidates using ${arch}.`,state.rerank?'Reranked candidates and compressed overlapping context.':'Used original retrieval ranking.',state.verify?'Verified evidence support and citation coverage.':'Returned answer without a separate verification pass.'];for(let i=0;i<nodes.length;i++){nodes[i].classList.add('active');log.innerHTML+=`<div class="${i===4&&state.verify?'ok':'info'}">[0${i+1}] ${msgs[i]}</div>`;log.scrollTop=log.scrollHeight;await wait(420);nodes[i].classList.remove('active')}let [qual,lat,cost,risk]=bases[arch];qual+=state.rewrite?3:0;qual+=state.rerank?5:0;qual+=state.verify?4:0;qual+=Math.min(4,(+topk.value-3)*.45);if(+chunk.value>1000)qual-=3;if(+chunk.value<400)qual-=2;lat+=state.rewrite?.4:0;lat+=state.rerank?.7:0;lat+=state.verify?1.1:0;cost+=state.rewrite?.3:0;cost+=state.rerank?.4:0;cost+=state.verify?.9:0;risk-=state.rerank?3:0;risk-=state.verify?6:0;document.getElementById('quality').textContent=Math.round(Math.min(96,qual))+'/100';document.getElementById('latency').textContent=lat.toFixed(1)+'×';document.getElementById('cost').textContent=cost.toFixed(1)+'×';document.getElementById('risk').textContent=Math.max(4,Math.round(risk))+'%';log.innerHTML+=`<div class="ok">Complete. Compare these relative indicators against your own evaluation dataset before making a production decision.</div>`;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)}document.getElementById('run').onclick=run;
 
-function tokenize(s){
-  return (s.toLowerCase().match(/[a-z0-9]+/g)||[]).filter(w=>!STOP.has(w));
-}
-function syncLabels(){
-  chunkSizeLabel.textContent=chunkSize.value;
-  overlapLabel.textContent=overlap.value;
-  topKLabel.textContent=topK.value;
-}
-function splitChunks(text,size,overlap){
-  const clean=text.replace(/\s+/g," ").trim();
-  if(!clean) return [];
-  const chunks=[];
-  let start=0, i=0;
-  while(start<clean.length){
-    let end=Math.min(start+size,clean.length);
-    if(end<clean.length){
-      const boundary=clean.lastIndexOf(" ",end);
-      if(boundary>start+size*.65) end=boundary;
-    }
-    chunks.push({id:++i,text:clean.slice(start,end).trim()});
-    if(end>=clean.length) break;
-    start=Math.max(end-overlap,start+1);
-  }
-  return chunks;
-}
-function keywordScore(q,t){
-  const qs=tokenize(q), ts=tokenize(t);
-  if(!qs.length) return 0;
-  const set=new Set(ts);
-  return qs.filter(x=>set.has(x)).length/qs.length;
-}
-function semanticScore(q,t){
-  const qs=tokenize(q), ts=tokenize(t);
-  const qset=new Set(qs), tset=new Set(ts);
-  let overlap=0;
-  qset.forEach(w=>{ if(tset.has(w)) overlap++ });
-  const synonyms={
-    refund:["reimbursement","money","return"],
-    policy:["rules","terms","agreement"],
-    enterprise:["contract","business","master"],
-    cancel:["cancellation","renewal","terminate"],
-    security:["encrypted","permissions","access"]
-  };
-  let bonus=0;
-  qs.forEach(w=>{
-    (synonyms[w]||[]).forEach(s=>{ if(tset.has(s)) bonus+=0.12 });
-  });
-  const denom=Math.sqrt(Math.max(qset.size,1)*Math.max(tset.size,1));
-  return Math.min(1,(overlap/denom)+bonus);
-}
-function score(q,t,method){
-  const k=keywordScore(q,t), s=semanticScore(q,t);
-  return method==="keyword"?k:method==="semantic"?s:(0.45*k+0.55*s);
-}
-function makeVector(text){
-  let seed=0;
-  for(let i=0;i<text.length;i++) seed=(seed*31+text.charCodeAt(i))>>>0;
-  const vals=[];
-  for(let i=0;i<8;i++){
-    seed=(1664525*seed+1013904223)>>>0;
-    vals.push((seed%100)/100);
-  }
-  return vals;
-}
-function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
-function runPipeline(){
-  syncLabels();
-  const knowledge=document.getElementById("knowledge").value;
-  const q=document.getElementById("query").value.trim();
-  const size=+chunkSize.value, ov=+overlap.value, k=+topK.value, methodVal=method.value;
-  const chunksData=splitChunks(knowledge,size,ov);
-
-  chunks.innerHTML=chunksData.map(c=>`
-    <div class="chunk">
-      <div class="meta"><span>Chunk ${c.id}</span><span>${c.text.length} chars</span></div>
-      ${escapeHtml(c.text)}
-    </div>`).join("");
-
-  vectors.innerHTML=chunksData.slice(0,4).map(c=>{
-    const v=makeVector(c.text);
-    return `<div class="chunk"><div class="meta"><span>Chunk ${c.id}</span><span>embedding</span></div>
-      <div class="tiny">[${v.map(x=>x.toFixed(2)).join(", ")}]</div>
-      <div class="vector">${v.map(x=>`<div class="vec-cell ${x>.66?"hot":""}" style="opacity:${0.35+x*.65}"></div>`).join("")}</div>
-    </div>`;
-  }).join("");
-
-  const qv=makeVector(q);
-  queryView.textContent=`Query: "${q}"\n\nQuery embedding (simulated): [${qv.map(x=>x.toFixed(2)).join(", ")}]\n\nRetrieval mode: ${method.options[method.selectedIndex].text}`;
-
-  const ranked=chunksData.map(c=>({...c,score:score(q,c.text,methodVal)})).sort((a,b)=>b.score-a.score).slice(0,k);
-
-  retrievalResults.innerHTML=ranked.map((r,i)=>resultHtml(r,i+1,"Similarity")).join("");
-
-  let reranked=[...ranked];
-  if(rerank.value==="yes"){
-    reranked=reranked.map(r=>{
-      let rr=r.score;
-      if(/refund|enterprise|policy/i.test(r.text)) rr+=0.08;
-      if(/security/i.test(r.text) && !/security/i.test(q)) rr-=0.04;
-      return {...r,rerankScore:Math.max(0,Math.min(1,rr))};
-    }).sort((a,b)=>b.rerankScore-a.rerankScore);
-  }else{
-    reranked=reranked.map(r=>({...r,rerankScore:r.score}));
-  }
-
-  rerankResults.innerHTML=reranked.map((r,i)=>resultHtml({...r,score:r.rerankScore},i+1,rerank.value==="yes"?"Reranked":"Original")).join("");
-
-  const context=reranked.map((r,i)=>`[Context ${i+1}] ${r.text}`).join("\n\n");
-  prompt.textContent=`SYSTEM:\nAnswer the user's question using only the provided context. If the answer is not in the context, say you do not have enough information.\n\nCONTEXT:\n${context || "(No relevant context found)"}\n\nUSER QUESTION:\n${q}`;
-
-  const best=reranked[0];
-  let response;
-  if(!best || best.rerankScore<0.08){
-    response="I don't have enough relevant information in the retrieved context to answer confidently.";
-  }else{
-    const relevant=reranked.filter(x=>x.rerankScore>0.08).map(x=>x.text);
-    const joined=relevant.join(" ");
-    if(/refund/i.test(q) && /30 days/i.test(joined)){
-      response="Enterprise customers may request a refund within 30 days of the initial purchase, provided service usage is below 10% of contracted capacity. A refund request should include the customer account ID, invoice number, and business justification.";
-    }else{
-      response=`Based on the retrieved context: ${relevant[0] || best.text}`;
-    }
-  }
-  answer.innerHTML=`<strong>Simulated grounded answer</strong><br>${escapeHtml(response)}<div class="tiny" style="margin-top:10px">Sources: ${reranked.map(x=>"Chunk "+x.id).join(", ") || "none"}</div>`;
-
-  const relevance=ranked.length?Math.round((ranked.reduce((a,b)=>a+b.score,0)/ranked.length)*100):0;
-  const grounded=best&&best.rerankScore>.12?94:64;
-  const efficiency=Math.max(35,Math.min(98,100-(k-1)*8));
-  const risk=best&&best.rerankScore>.14?"Low":best&&best.rerankScore>.07?"Medium":"High";
-  kpiRecall.textContent=relevance+"%";
-  kpiGround.textContent=grounded+"%";
-  kpiContext.textContent=efficiency+"%";
-  kpiRisk.textContent=risk;
-}
-function resultHtml(r,rank,label){
-  const pct=Math.max(2,Math.round(r.score*100));
-  return `<div class="result">
-    <div class="score-pill">#${rank}<br><span style="font-size:11px">${pct}%</span></div>
-    <div><div class="tiny">${label} score • Chunk ${r.id}</div>
-    <div style="margin-top:4px">${escapeHtml(r.text)}</div>
-    <div class="bar"><span style="width:${pct}%"></span></div></div>
-  </div>`;
-}
-function loadSample(){
-  knowledge.value=`Enterprise refund policy: Enterprise customers may request a refund within 30 days of initial purchase if service usage is below 10% of contracted capacity.
-
-Cancellation policy: Enterprise contracts may be cancelled at renewal unless otherwise specified in the master service agreement.
-
-Billing FAQ: Refund requests must include the customer account ID, invoice number, and business justification.
-
-Security policy: Customer data is encrypted in transit and at rest. Access is controlled with role-based permissions.
-
-Support policy: Priority enterprise customers receive 24/7 support for Severity 1 incidents.`;
-  runPipeline();
-}
-function resetDemo(){
-  chunkSize.value=120; overlap.value=20; topK.value=3; method.value="hybrid"; rerank.value="yes";
-  query.value="What is the refund policy for enterprise customers?";
-  loadSample();
-}
-runPipeline();
+function advise(){const q=document.getElementById('dQuestion').value,e=document.getElementById('dEvidence').value,p=document.getElementById('dPriority').value;let name='Naive RAG',reason='Use a simple retrieve-and-generate baseline, then evaluate retrieval recall and answer faithfulness.';if(e==='visual'){name='Multimodal RAG';reason='The evidence includes non-text content, so use modality-aware parsing, embeddings, retrieval, and a multimodal model.'}else if(q==='task'){name='Agentic RAG';reason='The request requires planning, decomposition, multiple retrieval calls, or tool use. Bound loops and enforce tool permissions.'}else if(q==='multi'){name='GraphRAG';reason='Relationships and multi-hop evidence are central. Combine graph traversal with supporting text retrieval.'}else if(e==='noisy'&&p==='control'){name='Corrective RAG';reason='Evidence quality varies and explicit control is important. Grade retrieval and route weak results to refinement.'}else if(q==='exact'){name='Hybrid RAG';reason='Combine lexical precision with semantic recall, then fuse and rerank candidates.'}else if(e==='siloed'){name='Federated / Agentic RAG';reason='Route queries across governed sources while preserving source-level permissions and provenance.'}else if(p==='quality'){name='Advanced RAG';reason='Add query transformation, hybrid retrieval, reranking, and context compression to improve evidence quality.'}document.getElementById('dResult').textContent=name;document.getElementById('dReason').textContent=reason}
+['dQuestion','dEvidence','dPriority'].forEach(id=>document.getElementById(id).addEventListener('change',advise));advise();
 </script>
-</body>
-</html>
+</body></html>
